@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/caarlos0/env"
-	"github.com/dimorinny/twitch-interesting-fragments/chat"
+	"github.com/dimorinny/twitch-chat-api"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	irc "github.com/fluffle/goirc/client"
 	"log"
@@ -41,17 +41,24 @@ func init() {
 }
 
 func main() {
-	client := chat.NewClient(
-		config,
+	twitchConfiguration := twitchchat.NewConfiguration(
+		config.Nickname,
+		config.Oauth,
+		config.Channel,
+	)
+
+	chat := twitchchat.NewChat(
+		twitchConfiguration,
 		connection,
 	)
 
-	runWithChannels(client)
+	runWithChannels(chat)
 }
 
-func runWithChannels(client *chat.Client) {
+func runWithChannels(twitch *twitchchat.Chat) {
 	disconnected := make(chan struct{})
 	connected := make(chan struct{})
+	errStream := make(chan error)
 	message := make(chan string)
 
 	go func() {
@@ -61,22 +68,27 @@ func runWithChannels(client *chat.Client) {
 				fmt.Println("Disconnected")
 			case <-connected:
 				fmt.Println("Connected")
+			case err := <-errStream:
+				fmt.Println(err)
 			case newMessage := <-message:
 				fmt.Println(newMessage)
 			}
 		}
 	}()
 
-	client.ConnectWithChannels(connected, disconnected, message)
+	twitch.ConnectWithChannels(connected, disconnected, errStream, message)
 }
 
-func runWithCallbacks(client *chat.Client) {
-	client.ConnectWithCallbacks(
+func runWithCallbacks(twitch *twitchchat.Chat) {
+	twitch.ConnectWithCallbacks(
 		func() {
 			fmt.Println("Connected")
 		},
 		func() {
 			fmt.Println("Disconnected")
+		},
+		func(err error) {
+			fmt.Println(err)
 		},
 		func(message string) {
 			fmt.Println(message)
