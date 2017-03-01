@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/dimorinny/twitch-chat-api"
+	"github.com/dimorinny/twitch-interesting-fragments/buffer"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	irc "github.com/fluffle/goirc/client"
 	"log"
+	"time"
 )
 
 var (
@@ -49,17 +51,57 @@ func main() {
 
 	chat := twitchchat.NewChat(
 		twitchConfiguration,
-		connection,
 	)
 
-	runWithChannels(chat)
+	message := make(chan string)
+
+	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*5)
+
+	go runWithChannels(chat, message)
+
+	bufferedChannel := timeBuffer.Start()
+
+	go func() {
+		time.Sleep(15 * time.Second)
+		fmt.Println("Stopped1")
+		timeBuffer.Stop()
+	}()
+
+	for {
+		items, ok := <-bufferedChannel
+
+		if !ok {
+			break
+		}
+
+		fmt.Println(items)
+		fmt.Println(ok)
+	}
+
+	bufferedChannel = timeBuffer.Start()
+
+	go func() {
+		time.Sleep(30 * time.Second)
+		fmt.Println("Stopped2")
+		timeBuffer.Stop()
+	}()
+
+	for {
+		items, ok := <-bufferedChannel
+
+		if !ok {
+			break
+		}
+
+		fmt.Println(items)
+		fmt.Println(ok)
+	}
 }
 
-func runWithChannels(twitch *twitchchat.Chat) {
+func runWithChannels(twitch *twitchchat.Chat, message chan string) {
 	disconnected := make(chan struct{})
 	connected := make(chan struct{})
 	errStream := make(chan error)
-	message := make(chan string)
 
 	go func() {
 		for {
@@ -70,28 +112,10 @@ func runWithChannels(twitch *twitchchat.Chat) {
 				fmt.Println("Connected")
 			case err := <-errStream:
 				fmt.Println(err)
-			case newMessage := <-message:
-				fmt.Println(newMessage)
+			case _ = <-message:
 			}
 		}
 	}()
 
 	twitch.ConnectWithChannels(connected, disconnected, errStream, message)
-}
-
-func runWithCallbacks(twitch *twitchchat.Chat) {
-	twitch.ConnectWithCallbacks(
-		func() {
-			fmt.Println("Connected")
-		},
-		func() {
-			fmt.Println("Disconnected")
-		},
-		func(err error) {
-			fmt.Println(err)
-		},
-		func(message string) {
-			fmt.Println(message)
-		},
-	)
 }
