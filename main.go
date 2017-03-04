@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/dimorinny/twitch-chat-api"
+	"github.com/dimorinny/twitch-interesting-fragments/api"
 	"github.com/dimorinny/twitch-interesting-fragments/buffer"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	irc "github.com/fluffle/goirc/client"
 	"log"
+	"net/http"
 	"time"
 )
 
 var (
 	config     configuration.Configuration
 	connection *irc.Conn
+	uploader   *api.Uploader
 )
 
 func initConfiguration() {
@@ -23,6 +26,10 @@ func initConfiguration() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func initUploader() {
+	uploader = api.NewUploader(config, http.DefaultClient)
 }
 
 func initTwitchIrcConfig() (ircConfig *irc.Config) {
@@ -39,10 +46,25 @@ func initTwitchConnection() {
 
 func init() {
 	initConfiguration()
+	initUploader()
 	initTwitchConnection()
 }
 
 func main() {
+	uploadExample()
+}
+
+func uploadExample() {
+	result, err := uploader.Upload()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	print(result)
+}
+
+func bufferExample() {
 	twitchConfiguration := twitchchat.NewConfiguration(
 		config.Nickname,
 		config.Oauth,
@@ -57,7 +79,7 @@ func main() {
 
 	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*5)
 
-	go runWithChannels(chat, message)
+	go ircChatExample(chat, message)
 
 	bufferedChannel := timeBuffer.Start()
 
@@ -98,7 +120,7 @@ func main() {
 	}
 }
 
-func runWithChannels(twitch *twitchchat.Chat, message chan string) {
+func ircChatExample(twitch *twitchchat.Chat, message chan string) {
 	disconnected := make(chan struct{})
 	connected := make(chan struct{})
 	errStream := make(chan error)
