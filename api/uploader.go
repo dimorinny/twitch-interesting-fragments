@@ -1,10 +1,11 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	"net/http"
-	"encoding/json"
+	"github.com/kataras/go-errors"
 )
 
 const (
@@ -26,28 +27,41 @@ func NewUploader(configuration configuration.Configuration, client *http.Client)
 }
 
 func (u *Uploader) Upload() (*UploadResponse, error) {
+	response := &UploadResponse{}
+
+	err := u.do("upload", response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (u *Uploader) do(method string, response interface{}) error {
 	req, err := http.NewRequest(
 		"GET",
 		fmt.Sprintf(
-			"%s://%s:%d/api/v1/upload",
+			"%s://%s:%d/api/v1/%s",
 			scheme,
 			u.configuration.UploaderHost,
 			u.configuration.UploaderPort,
+			method,
 		),
 		nil,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resp, err := u.client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
-	response := &UploadResponse{}
-	json.NewDecoder(resp.Body).Decode(response)
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("Response status code different from 200")
+	}
 
-	return response, nil
+	return json.NewDecoder(resp.Body).Decode(response)
 }
