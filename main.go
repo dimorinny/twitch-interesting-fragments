@@ -61,7 +61,7 @@ func uploadExample() {
 		log.Fatal(err)
 	}
 
-	print(result)
+	print(result.Data.Url)
 }
 
 func bufferExample() {
