@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
-	"net/http"
 	"github.com/kataras/go-errors"
+	"net/http"
 )
 
 const (
@@ -27,14 +27,14 @@ func NewUploader(configuration configuration.Configuration, client *http.Client)
 }
 
 func (u *Uploader) Upload() (*UploadResponse, error) {
-	response := &UploadResponse{}
+	response := &uploadResult{}
 
 	err := u.do("upload", response)
 	if err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	return &response.Data, nil
 }
 
 func (u *Uploader) do(method string, response interface{}) error {

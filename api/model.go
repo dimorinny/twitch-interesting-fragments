@@ -5,11 +5,11 @@ type response struct {
 }
 
 type uploadResult struct {
-	Url  string `json:"url"`
-	Name string `json:"name"`
+	response
+	Data UploadResponse `json:"response"`
 }
 
 type UploadResponse struct {
-	response
-	Data uploadResult `json:"response"`
+	Url  string `json:"url"`
+	Name string `json:"name"`
 }
