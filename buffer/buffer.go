@@ -76,10 +76,14 @@ func (b *MessagesBuffer) startOutputChannelHandling(output chan<- []string) {
 func (b *MessagesBuffer) startInputChannelHandling() {
 	for {
 		select {
-		case item := <-b.source:
-			b.Lock()
-			b.items = append(b.items, item)
-			b.Unlock()
+		case item, ok := <-b.source:
+			if !ok {
+				go b.Stop()
+			} else {
+				b.Lock()
+				b.items = append(b.items, item)
+				b.Unlock()
+			}
 
 		case _ = <-b.inputStop:
 			return

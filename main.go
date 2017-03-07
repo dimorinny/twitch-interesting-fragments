@@ -10,6 +10,7 @@ import (
 	irc "github.com/fluffle/goirc/client"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -51,7 +52,7 @@ func init() {
 }
 
 func main() {
-	uploadExample()
+	bufferExample()
 }
 
 func uploadExample() {
@@ -76,68 +77,61 @@ func bufferExample() {
 	)
 
 	message := make(chan string)
-
-	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*5)
+	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*10)
 
 	go ircChatExample(chat, message)
 
 	bufferedChannel := timeBuffer.Start()
 
-	go func() {
-		time.Sleep(15 * time.Second)
-		fmt.Println("Stopped1")
-		timeBuffer.Stop()
-	}()
-
-	for {
-		items, ok := <-bufferedChannel
-
-		if !ok {
-			break
-		}
-
-		fmt.Println(items)
-		fmt.Println(ok)
+	file, err := os.Create("/Users/damerkurev/Desktop/dump.csv")
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer file.Close()
 
-	bufferedChannel = timeBuffer.Start()
+	for items := range bufferedChannel {
 
-	go func() {
-		time.Sleep(30 * time.Second)
-		fmt.Println("Stopped2")
-		timeBuffer.Stop()
-	}()
+		fmt.Println(
+			fmt.Sprintf(
+				"%s;%d",
+				time.Now().Format("15:04:05"),
+				len(items),
+			),
+		)
 
-	for {
-		items, ok := <-bufferedChannel
-
-		if !ok {
-			break
-		}
-
-		fmt.Println(items)
-		fmt.Println(ok)
+		file.WriteString(
+			fmt.Sprintf(
+				"%s;%d\n",
+				time.Now().Format("15:04:05"),
+				len(items),
+			),
+		)
 	}
 }
 
 func ircChatExample(twitch *twitchchat.Chat, message chan string) {
+	stop := make(chan struct{})
+	defer close(stop)
+
 	disconnected := make(chan struct{})
 	connected := make(chan struct{})
-	errStream := make(chan error)
 
 	go func() {
 		for {
 			select {
 			case <-disconnected:
 				fmt.Println("Disconnected")
+				stop <- struct{}{}
 			case <-connected:
 				fmt.Println("Connected")
-			case err := <-errStream:
-				fmt.Println(err)
-			case _ = <-message:
 			}
 		}
 	}()
 
-	twitch.ConnectWithChannels(connected, disconnected, errStream, message)
+	err := twitch.ConnectWithChannels(connected, disconnected, message)
+	if err != nil {
+		return
+	}
+
+	<-stop
 }
