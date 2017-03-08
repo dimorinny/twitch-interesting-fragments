@@ -41,11 +41,11 @@ func (b *MessagesBuffer) Stop() {
 	}
 }
 
-func (b *MessagesBuffer) Start() <-chan []string {
+func (b *MessagesBuffer) Start() <-chan int {
 	b.Stop()
 
 	b.ticker = time.NewTicker(b.interval)
-	outputChannel := make(chan []string)
+	outputChannel := make(chan int)
 
 	go b.startInputChannelHandling()
 	go b.startOutputChannelHandling(outputChannel)
@@ -53,12 +53,12 @@ func (b *MessagesBuffer) Start() <-chan []string {
 	return outputChannel
 }
 
-func (b *MessagesBuffer) startOutputChannelHandling(output chan<- []string) {
+func (b *MessagesBuffer) startOutputChannelHandling(output chan<- int) {
 	for {
 		select {
 		case _ = <-b.ticker.C:
 			b.Lock()
-			output <- b.items
+			output <- len(b.items)
 			b.items = []string{}
 			b.Unlock()
 

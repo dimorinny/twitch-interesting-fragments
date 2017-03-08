@@ -7,10 +7,10 @@ import (
 	"github.com/dimorinny/twitch-interesting-fragments/api"
 	"github.com/dimorinny/twitch-interesting-fragments/buffer"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
+	"github.com/dimorinny/twitch-interesting-fragments/detection"
 	irc "github.com/fluffle/goirc/client"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -55,6 +55,31 @@ func main() {
 	bufferExample()
 }
 
+func detectionExample() {
+	input := make(chan int)
+	output := make(chan int)
+
+	data := []int{
+		2, 7, 8, 6, 4, 4, 5, 7, 9, 6, 7, 9, 6, 7, 5, 5, 6, 5, 4, 8, 5, 7, 10,
+		9, 5, 7, 8, 15, 11, 11, 5, 4, 8, 4, 8, 6, 4, 13, 12, 10, 5, 10, 11, 12,
+		11, 6, 9, 7, 9, 7, 29, 18, 17, 17, 9, 10, 8, 14, 8, 10, 10, 13, 13, 10, 10,
+	}
+
+	go func() {
+		for _, item := range data {
+			input <- item
+		}
+		close(input)
+	}()
+
+	go func() {
+		for range output {
+		}
+	}()
+
+	detection.StartDetection(10, 3, input, output)
+}
+
 func uploadExample() {
 	result, err := uploader.Upload()
 
@@ -82,31 +107,15 @@ func bufferExample() {
 	go ircChatExample(chat, message)
 
 	bufferedChannel := timeBuffer.Start()
+	output := make(chan int)
 
-	file, err := os.Create("/Users/damerkurev/Desktop/dump.csv")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
+	go func() {
+		for item := range output {
+			fmt.Printf("Splash detected: %d\n", item)
+		}
+	}()
 
-	for items := range bufferedChannel {
-
-		fmt.Println(
-			fmt.Sprintf(
-				"%s;%d",
-				time.Now().Format("15:04:05"),
-				len(items),
-			),
-		)
-
-		file.WriteString(
-			fmt.Sprintf(
-				"%s;%d\n",
-				time.Now().Format("15:04:05"),
-				len(items),
-			),
-		)
-	}
+	detection.StartDetection(15, 4, bufferedChannel, output)
 }
 
 func ircChatExample(twitch *twitchchat.Chat, message chan string) {
