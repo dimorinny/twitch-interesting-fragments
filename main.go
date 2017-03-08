@@ -73,11 +73,12 @@ func detectionExample() {
 	}()
 
 	go func() {
-		for range output {
+		for item := range output {
+			fmt.Printf("Splash detected: %d\n", item)
 		}
 	}()
 
-	detection.StartDetection(10, 3, input, output)
+	detection.StartDetection(10, 4, 2, input, output)
 }
 
 func uploadExample() {
@@ -102,7 +103,7 @@ func bufferExample() {
 	)
 
 	message := make(chan string)
-	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*10)
+	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*25)
 
 	go ircChatExample(chat, message)
 
@@ -115,7 +116,7 @@ func bufferExample() {
 		}
 	}()
 
-	detection.StartDetection(15, 4, bufferedChannel, output)
+	detection.StartDetection(10, 4, 2, bufferedChannel, output)
 }
 
 func ircChatExample(twitch *twitchchat.Chat, message chan string) {
