@@ -78,7 +78,13 @@ func detectionExample() {
 		}
 	}()
 
-	detection.StartDetection(10, 4, 2, input, output)
+	detection.StartDetection(
+		config.WindowSize,
+		config.SpikeRate,
+		config.SmoothRate,
+		input,
+		output,
+	)
 }
 
 func uploadExample() {
@@ -116,7 +122,13 @@ func bufferExample() {
 		}
 	}()
 
-	detection.StartDetection(10, 4, 2, bufferedChannel, output)
+	detection.StartDetection(
+		config.WindowSize,
+		config.SpikeRate,
+		config.SmoothRate,
+		bufferedChannel,
+		output,
+	)
 }
 
 func ircChatExample(twitch *twitchchat.Chat, message chan string) {
