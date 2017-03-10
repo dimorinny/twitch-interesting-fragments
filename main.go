@@ -71,7 +71,7 @@ func startDetection() {
 	messages := make(chan string)
 	timeBuffer := buffer.NewMessagesBuffer(
 		messages,
-		time.Second*time.Duration(config.MessagesBufferTime),
+		time.Duration(config.MessagesBufferTime)*time.Second,
 	)
 
 	if err := handleTwitchChat(messages); err != nil {
@@ -94,6 +94,7 @@ func startDetection() {
 
 func handleDetectedFragment(detectedFragmentChannel <-chan float32) {
 	for fragmentRate := range detectedFragmentChannel {
+		time.Sleep(time.Duration(config.RecordDelay) * time.Second)
 		response, err := uploader.Upload()
 		if err != nil {
 			fmt.Printf("Error during uploading fragment %s\n", err)
