@@ -7,7 +7,7 @@ func StartDetection(
 	spikeRate float32,
 	smoothRate float32,
 	input <-chan int,
-	output chan<- int,
+	output chan<- float32,
 ) {
 	window := []int{}
 	var average float32
@@ -21,6 +21,10 @@ func StartDetection(
 		return average*spikeRate < float32(current)
 	}
 
+	getFragmentRate := func(current int) float32 {
+		return float32(current)/average - spikeRate + 1
+	}
+
 	for count := range input {
 		if count != 0 {
 			fmt.Printf("New item: %d ", count)
@@ -30,7 +34,7 @@ func StartDetection(
 				if checkSplash(spikeRate, count) {
 					// Clear window when spike detected
 					clear()
-					output <- count
+					output <- getFragmentRate(count)
 					continue
 				} else if smoothRate != 0 && checkSplash(spikeRate/smoothRate, count) {
 					// Compensate increasing average value

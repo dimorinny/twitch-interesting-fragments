@@ -79,21 +79,21 @@ func startDetection() {
 	}
 
 	bufferedChannel := timeBuffer.Start()
-	output := make(chan int)
+	detectedChannel := make(chan float32)
 
-	go handleDetectedFragment(output)
+	go handleDetectedFragment(detectedChannel)
 
 	detection.StartDetection(
 		config.WindowSize,
 		config.SpikeRate,
 		config.SmoothRate,
 		bufferedChannel,
-		output,
+		detectedChannel,
 	)
 }
 
-func handleDetectedFragment(detectedFragmentChannel <-chan int) {
-	for range detectedFragmentChannel {
+func handleDetectedFragment(detectedFragmentChannel <-chan float32) {
+	for fragmentRate := range detectedFragmentChannel {
 		response, err := uploader.Upload()
 		if err != nil {
 			fmt.Printf("Error during uploading fragment %s\n", err)
@@ -103,6 +103,7 @@ func handleDetectedFragment(detectedFragmentChannel <-chan int) {
 			data.UploadedFragment{
 				Name: response.Name,
 				Url:  response.Url,
+				Rate: fragmentRate,
 			},
 		)
 	}
