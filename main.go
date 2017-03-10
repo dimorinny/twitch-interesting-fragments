@@ -8,16 +8,15 @@ import (
 	"github.com/dimorinny/twitch-interesting-fragments/buffer"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	"github.com/dimorinny/twitch-interesting-fragments/detection"
-	irc "github.com/fluffle/goirc/client"
 	"log"
 	"net/http"
 	"time"
 )
 
 var (
-	config     configuration.Configuration
-	connection *irc.Conn
-	uploader   *api.Uploader
+	config   configuration.Configuration
+	twitch   *twitchchat.Chat
+	uploader *api.Uploader
 )
 
 func initConfiguration() {
@@ -29,89 +28,40 @@ func initConfiguration() {
 	}
 }
 
+func initChat() {
+	twitch = twitchchat.NewChat(
+		twitchchat.NewConfiguration(
+			config.Nickname,
+			config.Oauth,
+			config.Channel,
+		),
+	)
+}
+
 func initUploader() {
 	uploader = api.NewUploader(config, http.DefaultClient)
 }
 
-func initTwitchIrcConfig() (ircConfig *irc.Config) {
-	ircConfig = irc.NewConfig(config.Nickname)
-	ircConfig.Server = config.Host
-	ircConfig.Pass = config.Oauth
-	return
-}
-
-func initTwitchConnection() {
-	connection = irc.Client(initTwitchIrcConfig())
-	return
-}
-
 func init() {
 	initConfiguration()
+	initChat()
 	initUploader()
-	initTwitchConnection()
 }
 
 func main() {
-	bufferExample()
+	startDetection()
 }
 
-func detectionExample() {
-	input := make(chan int)
-	output := make(chan int)
-
-	data := []int{
-		2, 7, 8, 6, 4, 4, 5, 7, 9, 6, 7, 9, 6, 7, 5, 5, 6, 5, 4, 8, 5, 7, 10,
-		9, 5, 7, 8, 15, 11, 11, 5, 4, 8, 4, 8, 6, 4, 13, 12, 10, 5, 10, 11, 12,
-		11, 6, 9, 7, 9, 7, 29, 18, 17, 17, 9, 10, 8, 14, 8, 10, 10, 13, 13, 10, 10,
-	}
-
-	go func() {
-		for _, item := range data {
-			input <- item
-		}
-		close(input)
-	}()
-
-	go func() {
-		for item := range output {
-			fmt.Printf("Splash detected: %d\n", item)
-		}
-	}()
-
-	detection.StartDetection(
-		config.WindowSize,
-		config.SpikeRate,
-		config.SmoothRate,
-		input,
-		output,
+func startDetection() {
+	messages := make(chan string)
+	timeBuffer := buffer.NewMessagesBuffer(
+		messages,
+		time.Second*time.Duration(config.MessagesBufferTime),
 	)
-}
 
-func uploadExample() {
-	result, err := uploader.Upload()
-
-	if err != nil {
+	if err := handleTwitchChat(messages); err != nil {
 		log.Fatal(err)
 	}
-
-	print(result.Url)
-}
-
-func bufferExample() {
-	twitchConfiguration := twitchchat.NewConfiguration(
-		config.Nickname,
-		config.Oauth,
-		config.Channel,
-	)
-
-	chat := twitchchat.NewChat(
-		twitchConfiguration,
-	)
-
-	message := make(chan string)
-	timeBuffer := buffer.NewMessagesBuffer(message, time.Second*25)
-
-	go ircChatExample(chat, message)
 
 	bufferedChannel := timeBuffer.Start()
 	output := make(chan int)
@@ -131,10 +81,7 @@ func bufferExample() {
 	)
 }
 
-func ircChatExample(twitch *twitchchat.Chat, message chan string) {
-	stop := make(chan struct{})
-	defer close(stop)
-
+func handleTwitchChat(message chan string) error {
 	disconnected := make(chan struct{})
 	connected := make(chan struct{})
 
@@ -143,17 +90,11 @@ func ircChatExample(twitch *twitchchat.Chat, message chan string) {
 			select {
 			case <-disconnected:
 				fmt.Println("Disconnected")
-				stop <- struct{}{}
 			case <-connected:
 				fmt.Println("Connected")
 			}
 		}
 	}()
 
-	err := twitch.ConnectWithChannels(connected, disconnected, message)
-	if err != nil {
-		return
-	}
-
-	<-stop
+	return twitch.ConnectWithChannels(connected, disconnected, message)
 }
