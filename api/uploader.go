@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
-	"github.com/kataras/go-errors"
 	"net/http"
+	"github.com/pkg/errors"
 )
 
 const (

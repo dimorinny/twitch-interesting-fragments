@@ -79,17 +79,15 @@ func startDetection() {
 	}
 
 	bufferedChannel := timeBuffer.Start()
-	detectedChannel := make(chan float32)
 
-	go handleDetectedFragment(detectedChannel)
-
-	detection.StartDetection(
+	detectedChannel := detection.StartDetection(
 		config.WindowSize,
 		config.SpikeRate,
 		config.SmoothRate,
 		bufferedChannel,
-		detectedChannel,
 	)
+
+	handleDetectedFragment(detectedChannel)
 }
 
 func handleDetectedFragment(detectedFragmentChannel <-chan float32) {
