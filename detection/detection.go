@@ -35,8 +35,9 @@ func StartDetection(
 				if len(window) == windowSize {
 					if checkSplash(spikeRate, count) {
 						// Clear window when spike detected
+						fragmentRate := getFragmentRate(count)
 						clear()
-						output <- getFragmentRate(count)
+						output <- fragmentRate
 						continue
 					} else if smoothRate != 0 && checkSplash(spikeRate/smoothRate, count) {
 						// Compensate increasing average value
