@@ -27,7 +27,10 @@ func initConfiguration() {
 
 	err := env.Parse(&config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf(
+			"Error while configuration initialize: %v",
+			err,
+		)
 	}
 }
 
@@ -44,7 +47,10 @@ func initChat() {
 func initMongoStorage() {
 	session, err := mgo.Dial(config.StorageHost)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf(
+			"Error while connection to mongodb: %v",
+			err,
+		)
 	}
 
 	storage = data.NewMongoStorage(
@@ -75,6 +81,10 @@ func startDetection() {
 	)
 
 	if err := handleTwitchChat(messages); err != nil {
+		log.Fatalf(
+			"Connection to twitch chat error: %v",
+			err,
+		)
 		log.Fatal(err)
 	}
 
@@ -95,7 +105,8 @@ func handleDetectedFragment(detectedFragmentChannel <-chan float32) {
 		time.Sleep(time.Duration(config.RecordDelay) * time.Second)
 		response, err := uploader.Upload()
 		if err != nil {
-			fmt.Printf("Error during uploading fragment %s\n", err)
+			fmt.Printf("Error during uploading fragment %v\n", err)
+			continue
 		}
 
 		storage.AddUploadedFragment(
