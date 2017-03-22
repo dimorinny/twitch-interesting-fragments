@@ -15,10 +15,15 @@ type MongoStorage struct {
 	session *mgo.Session
 }
 
-func NewMongoStorage(session *mgo.Session) Storage {
+func NewMongoStorage(host string) (Storage, error) {
+	session, err := mgo.Dial(host)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MongoStorage{
 		session: session,
-	}
+	}, nil
 }
 
 func (s *MongoStorage) AddUploadedFragment(fragment UploadedFragment) error {

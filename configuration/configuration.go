@@ -10,6 +10,7 @@ type Configuration struct {
 	UploaderHost string `env:"UPLOADER_HOST"`
 	UploaderPort int    `env:"UPLOADER_PORT"`
 
+	StorageType string `env:"STORAGE_TYPE" envDefault:"no"`
 	StorageHost string `env:"STORAGE_HOST"`
 
 	MessagesBufferTime int     `env:"MESSAGES_BUFFER_TIME" envDefault:"25"`

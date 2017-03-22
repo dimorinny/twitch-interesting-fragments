@@ -9,7 +9,6 @@ import (
 	"github.com/dimorinny/twitch-interesting-fragments/configuration"
 	"github.com/dimorinny/twitch-interesting-fragments/data"
 	"github.com/dimorinny/twitch-interesting-fragments/detection"
-	"gopkg.in/mgo.v2"
 	"log"
 	"net/http"
 	"time"
@@ -44,18 +43,15 @@ func initChat() {
 	)
 }
 
-func initMongoStorage() {
-	session, err := mgo.Dial(config.StorageHost)
+func initStorage() {
+	var err error
+	storage, err = data.InitStorage(config)
 	if err != nil {
 		log.Fatalf(
-			"Error while connection to mongodb: %v",
+			"Error while storage initializing: %v",
 			err,
 		)
 	}
-
-	storage = data.NewMongoStorage(
-		session,
-	)
 }
 
 func initUploader() {
@@ -65,7 +61,7 @@ func initUploader() {
 func init() {
 	initConfiguration()
 	initChat()
-	initMongoStorage()
+	initStorage()
 	initUploader()
 }
 
