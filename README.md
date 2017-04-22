@@ -4,6 +4,10 @@ This service intended for monitoring and detecting spikes in Twitch stream chat 
 
 This service can be used with this [project](https://github.com/dimorinny/twitch-interesting-fragments-frontend), that allows us to monitoring twitch streams and upload this fragments to vk group.
 
+### Usage
+
+This project is used as microservice at this [repository](https://github.com/dimorinny/twitch-interesting-fragments-frontend).
+
 ### Params
 
 All params is passed as env params.
