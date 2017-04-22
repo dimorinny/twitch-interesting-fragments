@@ -1,12 +1,10 @@
 ## Twitch interesting stream fragments detection service
 
-This service intended for monitoring and detecting spikes in Twitch stream chat and call some endpoint for uploading stream fragment when it occured. Also, this service can store information about this spikes and uploaded fragment in some storage (now only MongoDB is available). Spikes detecion is based on average number in floating window.
-
-This service can be used with this [project](https://github.com/dimorinny/twitch-interesting-fragments-frontend), that allows us to monitoring twitch streams and upload this fragments to vk group.
+This service intended for monitoring and detecting spikes in Twitch stream chat and call some endpoint for uploading stream fragment when it occured. Also, this service can store information about this spikes and uploaded fragments at some storage (now only MongoDB is available). Spikes detecion is based in average number at floating window.
 
 ### Usage
 
-This project is used as microservice at this [repository](https://github.com/dimorinny/twitch-interesting-fragments-frontend).
+This service can be used with this [project](https://github.com/dimorinny/twitch-interesting-fragments-frontend), that allows us to monitoring twitch streams and upload this fragments to vk group.
 
 ### Params
 
